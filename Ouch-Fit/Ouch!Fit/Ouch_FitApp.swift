@@ -1,17 +1,27 @@
-//
-//  Ouch_FitApp.swift
-//  Ouch!Fit
-//
-//  Created by Chanita Pornsaktawee on 29/4/2568 BE.
-//
-
 import SwiftUI
+import Firebase
+import FirebaseDatabase
 
 @main
-struct WardrobeApp: App {
+struct Ouch_FitApp: App {
+    @State private var isLoggedIn = false
+
+    init() {
+        // Ensure Firebase is configured when the app starts
+        FirebaseApp.configure()
+        // Set the correct database URL as per the region
+        Database.database(url: "https://ouch-fit-default-rtdb.asia-southeast1.firebasedatabase.app/").reference()
+    }
+
     var body: some Scene {
         WindowGroup {
-            MainTabView()
+            if isLoggedIn {
+                // If the user is logged in, show the HomeView
+                MainTabView()
+            } else {
+                // If not logged in, show the LoginView
+                LoginView(isLoggedIn: $isLoggedIn)
+            }
         }
     }
 }
