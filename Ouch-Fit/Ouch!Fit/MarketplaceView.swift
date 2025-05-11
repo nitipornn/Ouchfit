@@ -1,90 +1,189 @@
-//
-//  MarketplaceView.swift
-//  Ouch!Fit
-//
-//  Created by Chanita Pornsaktawee on 29/4/2568 BE.
-//
 import SwiftUI
 import PhotosUI
+import FirebaseAuth
+import FirebaseDatabase
+import FirebaseStorage
 
-// 1. สร้าง struct สำหรับข้อมูลสินค้า
+// MarketplaceItem Struct
 struct MarketplaceItem: Identifiable {
-    var id = UUID()
+    var id: String // Unique ID for each item
     var name: String
     var description: String
     var price: Double
-    var contactSeller: String // ข้อมูลติดต่อผู้ขาย
-    var image: UIImage? // เปลี่ยนเป็น UIImage เพื่อเก็บรูปที่ผู้ใช้เลือก
+    var contactSeller: String
+    var imageURL: String?
+    var postedByUserID: String? // ID of the user who posted
+    var timestamp: Double?      // Server timestamp for sorting
+}
+
+func sanitizeFirebasePath(_ path: String) -> String {
+    let invalidCharacters = [".", "#", "$", "[", "]"]
+    var sanitizedPath = path
+    for character in invalidCharacters {
+        sanitizedPath = sanitizedPath.replacingOccurrences(of: character, with: "")
+    }
+    return sanitizedPath
 }
 
 struct MarketplaceView: View {
-    @State private var items: [MarketplaceItem] = [
-        MarketplaceItem(name: "T-shirt", description: "Comfortable cotton T-shirt", price: 19.99, contactSeller: "John Doe, 123-456-7890", image: UIImage(named: "MP1")),
-        MarketplaceItem(name: "Jeans", description: "Stylish denim jeans", price: 39.99, contactSeller: "Jane Smith, 234-567-8901", image: UIImage(named: "MP2")),
-        MarketplaceItem(name: "Sneakers", description: "Running sneakers with good support", price: 49.99, contactSeller: "Mark Lee/ 345-678-9012", image: UIImage(named: "MP3"))
-    ]
-    
-    @State private var showAddItemView = false  // ใช้เพื่อแสดงหน้าจอเพิ่มสินค้า
-    @State private var searchText = ""  // ฟังก์ชันค้นหาสินค้า
+    @State private var items: [MarketplaceItem] = []
+    @State private var showAddItemView = false
+    @State private var searchText = ""
+    @State private var firebaseListenerHandle: DatabaseHandle?
+    @State private var isLoading: Bool = true
+    @State private var fetchErrorMessage: String? = nil
+
+    // Firebase reference to "all_market_items"
+    private var dbRef: DatabaseReference {
+        return Database.database().reference().child("all_market_items")
+    }
 
     var body: some View {
         NavigationView {
             VStack {
-                // 2. เพิ่มฟังก์ชันการค้นหาสินค้า
                 SearchBar(text: $searchText)
-                    .padding()
+                    .padding(.horizontal)
+                    .padding(.top)
 
-                // 3. แสดงรายการสินค้าผ่าน List
-                List {
-                    ForEach(items.filter { searchText.isEmpty || $0.name.lowercased().contains(searchText.lowercased()) }) { item in
-                        NavigationLink(destination: ItemDetailView(item: item)) {
-                            HStack {
-                                // 4. การแสดงสินค้าทั้งหมดใน Card รูปแบบที่สะอาด
-                                VStack(alignment: .leading) {
-                                    Image(uiImage: item.image ?? UIImage())
-                                        .resizable()
-                                        .aspectRatio(contentMode: .fill)
-                                        .frame(width: 80, height: 80)
-                                        .clipShape(Circle())
-                                        .overlay(Circle().stroke(Color.gray, lineWidth: 1))
-
-                                    Text(item.name)
-                                        .font(.headline)
-                                    Text("$\(item.price, specifier: "%.2f")")
-                                        .font(.subheadline)
-                                        .foregroundColor(.green)
-                                }
-
-                                Spacer()
-                            }
-                            .padding()
+                if isLoading {
+                    ProgressView("Loading items...")
+                        .padding()
+                } else if let errorMessage = fetchErrorMessage {
+                    Text("Error: \(errorMessage)")
+                        .foregroundColor(.red)
+                        .padding()
+                        .multilineTextAlignment(.center)
+                } else if items.isEmpty {
+                    Text("No marketplace posts yet. Be the first to add one!")
+                        .font(.title2)
+                        .foregroundColor(.gray)
+                        .padding()
+                        .multilineTextAlignment(.center)
+                } else {
+                    List {
+                        ForEach(items.filter { searchText.isEmpty || $0.name.lowercased().contains(searchText.lowercased()) }) { item in
+                            itemRow(item: item)
                         }
                     }
                 }
-                .padding()
 
-                // 5. ปุ่มเพิ่มสินค้า
-                Button(action: {
-                    showAddItemView = true
-                }) {
-                    Text("Add New Item")
-                        .font(.title2)
+                // "Add New Item" button - only visible if user is logged in
+                if Auth.auth().currentUser != nil {
+                    Button(action: {
+                        showAddItemView = true
+                    }) {
+                        Text("Add New Item")
+                            .font(.title2)
+                            .padding()
+                            .frame(maxWidth: .infinity)
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
+                    .padding()
+                } else {
+                    Text("Log in to add your items to the marketplace.")
+                        .font(.callout)
+                        .foregroundColor(.gray)
                         .padding()
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+                        .multilineTextAlignment(.center)
                 }
-                .padding()
             }
             .navigationBarTitle("Marketplace", displayMode: .inline)
+            .onAppear {
+                fetchItemsFromFirebase()
+            }
+            .onDisappear {
+                if let handle = firebaseListenerHandle {
+                    dbRef.removeObserver(withHandle: handle)
+                }
+            }
             .sheet(isPresented: $showAddItemView) {
-                AddItemView(items: $items)  // หน้าจอสำหรับเพิ่มสินค้า
+                AddItemView()
             }
         }
     }
+
+    // Fetch items from Firebase Realtime Database
+    func fetchItemsFromFirebase() {
+        isLoading = true
+        fetchErrorMessage = nil
+
+        if let existingHandle = firebaseListenerHandle {
+            dbRef.removeObserver(withHandle: existingHandle)
+        }
+
+        firebaseListenerHandle = dbRef.observe(.value) { snapshot in
+            isLoading = false
+            guard snapshot.exists() else {
+                self.items = []
+                return
+            }
+
+            var fetchedItems: [MarketplaceItem] = []
+            for child in snapshot.children {
+                if let snapshot = child as? DataSnapshot,
+                   let itemDict = snapshot.value as? [String: Any] {
+                    let item = MarketplaceItem(
+                        id: snapshot.key,
+                        name: itemDict["name"] as? String ?? "N/A",
+                        description: itemDict["description"] as? String ?? "No description",
+                        price: itemDict["price"] as? Double ?? 0.0,
+                        contactSeller: itemDict["contactSeller"] as? String ?? "N/A",
+                        imageURL: itemDict["imageURL"] as? String,
+                        postedByUserID: itemDict["postedByUserID"] as? String,
+                        timestamp: itemDict["timestamp"] as? Double
+                    )
+                    fetchedItems.append(item)
+                }
+            }
+
+            // Sort items by timestamp (newest first)
+            fetchedItems.sort { ($0.timestamp ?? 0) > ($1.timestamp ?? 0) }
+            self.items = fetchedItems
+        }
+    }
+
+    // Row view for each marketplace item
+    func itemRow(item: MarketplaceItem) -> some View {
+        HStack(alignment: .top, spacing: 15) {
+            if let imageURLString = item.imageURL, let url = URL(string: imageURLString) {
+                AsyncImageView(url: url)
+                    .frame(width: 80, height: 80)
+                    .background(Color.gray.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+            } else {
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color.gray.opacity(0.3))
+                    .frame(width: 80, height: 80)
+                    .overlay(
+                        Image(systemName: "photo.fill")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 40, height: 40)
+                            .foregroundColor(.white.opacity(0.7))
+                    )
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(item.name)
+                    .font(.headline)
+                    .lineLimit(2)
+                Text("$\(item.price, specifier: "%.2f")")
+                    .font(.subheadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.green)
+                Text(item.description)
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                    .lineLimit(3)
+            }
+        }
+        .padding(.vertical, 8)
+    }
 }
 
-// 6. ฟังก์ชันการค้นหา
+// 3. SearchBar View
 struct SearchBar: View {
     @Binding var text: String
 
@@ -92,130 +191,209 @@ struct SearchBar: View {
         HStack {
             Image(systemName: "magnifyingglass")
                 .foregroundColor(.gray)
+            TextField("Search items...", text: $text)
+                .padding(8)
+                .background(Color(UIColor.systemGray6))
+                .cornerRadius(10)
+                .autocorrectionDisabled() // Optional: disable autocorrect for search
+                .textInputAutocapitalization(.never) // Optional
 
-            TextField("Search for items", text: $text)
-                .padding(7)
-                .background(Color.white)
-                .cornerRadius(8)
-                .shadow(radius: 3)
+            if !text.isEmpty {
+                Button(action: {
+                    self.text = ""
+                }) {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundColor(.gray)
+                }
+                .padding(.trailing, 6)
+            }
         }
-        .padding(.horizontal)
     }
 }
 
-// 7. หน้าจอสำหรับเพิ่มสินค้า
+// 4. AsyncImageView for loading images from URL
+struct AsyncImageView: View {
+    let url: URL
+
+    var body: some View {
+        AsyncImage(url: url) { phase in
+            switch phase {
+            case .empty:
+                ProgressView()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity) // Center ProgressView
+            case .success(let image):
+                image.resizable()
+                     .aspectRatio(contentMode: .fill)
+            case .failure(let error):
+                VStack { // Placeholder on failure
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundColor(.red)
+                    Text("Failed")
+                        .font(.caption)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .background(Color.gray.opacity(0.2))
+
+            @unknown default:
+                EmptyView()
+            }
+        }
+    }
+}
+
+// 5. AddItemView to post new items
 struct AddItemView: View {
-    @Binding var items: [MarketplaceItem]
+    @Environment(\.dismiss) var dismiss
     @State private var itemName = ""
     @State private var itemDescription = ""
     @State private var itemPrice: String = ""
     @State private var contactSeller = ""
     @State private var selectedImageItem: PhotosPickerItem? = nil
-    @State private var selectedImageData: Data? = nil
+    @State private var uploadedImageURL: String? = nil
+    @State private var selectedImageData: Data? = nil // To show a preview immediately
+
+    @State private var isUploadingImage = false
+    @State private var isSavingItem = false
+    @State private var showAlert = false
+    @State private var alertTitle = ""
+    @State private var alertMessage = ""
+    
+    private var dbRef: DatabaseReference {
+        return Database.database().reference().child("all_market_items")
+    }
+    private let storageRef = Storage.storage().reference().child("marketplace_images")
+
+    private var canSave: Bool {
+        !itemName.isEmpty &&
+        !itemDescription.isEmpty &&
+        Double(itemPrice) != nil && Double(itemPrice) ?? 0 > 0 &&
+        !contactSeller.isEmpty &&
+        uploadedImageURL != nil &&
+        !isUploadingImage &&
+        !isSavingItem &&
+        Auth.auth().currentUser != nil
+    }
 
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Add New Item")
-                .font(.largeTitle)
+        NavigationView {
+            Form {
+                Section(header: Text("Item Details")) {
+                    TextField("Item Name", text: $itemName)
+                    TextEditor(text: $itemDescription)
+                        .frame(height: 100)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 5)
+                                .stroke(Color(UIColor.systemGray4), lineWidth: 1)
+                        )
+                    TextField("Price", text: $itemPrice)
+                        .keyboardType(.decimalPad)
+                    TextField("Contact Seller", text: $contactSeller)
+                }
 
-            TextField("Item Name", text: $itemName)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding()
+                Section(header: Text("Product Image")) {
+                    PhotosPicker(selection: $selectedImageItem, matching: .images, photoLibrary: .shared()) {
+                        HStack {
+                            Image(systemName: "photo.on.rectangle.angled")
+                            Text("Select Product Image")
+                        }
+                        .foregroundColor(.blue)
+                    }
+                    .onChange(of: selectedImageItem) { newItem in
+                        Task {
+                            if let data = try? await newItem?.loadTransferable(type: Data.self) {
+                                selectedImageData = data
+                                let url = try await uploadImageToFirebaseStorage(imageData: data)
+                                uploadedImageURL = url.absoluteString
+                            }
+                        }
+                    }
 
-            TextField("Item Description", text: $itemDescription)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding()
+                    if isUploadingImage {
+                        HStack { ProgressView(); Text("Uploading...").foregroundColor(.gray) }
+                    } else if let imageData = selectedImageData, let uiImage = UIImage(data: imageData) {
+                         Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(maxHeight: 200)
+                            .cornerRadius(8)
+                    }
+                }
 
-            TextField("Item Price", text: $itemPrice)
-                .keyboardType(.decimalPad)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding()
-
-            TextField("Contact Seller", text: $contactSeller)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
-                .padding()
-
-            // 8. เพิ่มปุ่มสำหรับเลือกภาพสินค้า
-            PhotosPicker(selection: $selectedImageItem, matching: .images, photoLibrary: .shared()) {
-                Text("Select Product Image")
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.gray.opacity(0.1))
-                    .foregroundColor(.blue)
+                Section {
+                    Button(action: saveItemAction) {
+                        HStack {
+                            Spacer()
+                            Text("Save Item to Marketplace")
+                            Spacer()
+                        }
+                    }
+                    .disabled(!canSave)
+                    .padding(.vertical, 8)
+                    .background(canSave ? Color.green : Color.gray.opacity(0.5))
+                    .foregroundColor(.white)
                     .cornerRadius(10)
+                    .listRowInsets(EdgeInsets())
+                }
             }
-            .onChange(of: selectedImageItem) { newItem in
-                Task {
-                    // ดึงข้อมูลรูปภาพ
-                    if let data = try? await newItem?.loadTransferable(type: Data.self) {
-                        selectedImageData = data
+            .navigationTitle("Add New Item")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+            .alert(isPresented: $showAlert) {
+                Alert(title: Text(alertTitle), message: Text(alertMessage), dismissButton: .default(Text("OK")))
+            }
+        }
+    }
+
+    func saveItemAction() {
+        guard let currentUserID = Auth.auth().currentUser?.uid else { return }
+        guard let price = Double(itemPrice), price > 0 else { return }
+        guard let finalImageURL = uploadedImageURL else { return }
+
+        isSavingItem = true
+        let newItemId = dbRef.childByAutoId().key ?? UUID().uuidString
+
+        let newItemData: [String: Any] = [
+            "name": itemName,
+            "description": itemDescription,
+            "price": price,
+            "contactSeller": contactSeller,
+            "imageURL": finalImageURL,
+            "postedByUserID": currentUserID,
+            "timestamp": ServerValue.timestamp()
+        ]
+        
+        dbRef.child(newItemId).setValue(newItemData) { error, _ in
+            isSavingItem = false
+            if error == nil {
+                itemName = ""
+                itemDescription = ""
+                itemPrice = ""
+                contactSeller = ""
+                uploadedImageURL = nil
+                dismiss()
+            }
+        }
+    }
+
+    func uploadImageToFirebaseStorage(imageData: Data) async throws -> URL {
+        let imageFileName = UUID().uuidString + ".jpg"
+        let imageRef = storageRef.child(imageFileName)
+        return try await withCheckedThrowingContinuation { continuation in
+            imageRef.putData(imageData, metadata: nil) { metadata, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                }
+                imageRef.downloadURL { url, error in
+                    if let error = error {
+                        continuation.resume(throwing: error)
+                    } else if let url = url {
+                        continuation.resume(returning: url)
                     }
                 }
             }
-
-            Button(action: {
-                if let price = Double(itemPrice), !itemName.isEmpty, !itemDescription.isEmpty, !contactSeller.isEmpty, selectedImageData != nil {
-                    // เพิ่มสินค้าใหม่ในรายการ
-                    let newItem = MarketplaceItem(name: itemName, description: itemDescription, price: price, contactSeller: contactSeller, image: UIImage(data: selectedImageData!)!)
-                    items.append(newItem)  // เพิ่มสินค้าในรายการ
-                    itemName = ""
-                    itemDescription = ""
-                    itemPrice = ""
-                    contactSeller = ""
-                    selectedImageData = nil
-                }
-            }) {
-                Text("Save Item")
-                    .font(.title2)
-                    .padding()
-                    .background(Color.green)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
-            }
-            .padding()
-
-            Spacer()
         }
-        .padding()
-    }
-}
-
-// 9. หน้าจอสำหรับแสดงรายละเอียดสินค้า
-struct ItemDetailView: View {
-    var item: MarketplaceItem
-
-    var body: some View {
-        VStack {
-            Image(uiImage: item.image ?? UIImage())
-                .resizable()
-                .scaledToFit()
-                .frame(width: 250, height: 250)
-                .padding()
-
-            Text(item.name)
-                .font(.largeTitle)
-                .padding()
-
-            Text(item.description)
-                .padding()
-
-            Text("$\(item.price, specifier: "%.2f")")
-                .font(.title)
-                .foregroundColor(.green)
-
-            Text("Contact Seller: \(item.contactSeller)")
-                .font(.footnote)
-                .padding(.top, 10)
-
-            Spacer()
-        }
-        .navigationBarTitle(item.name, displayMode: .inline)
-        .padding()
-    }
-}
-
-struct MarketplaceView_Previews: PreviewProvider {
-    static var previews: some View {
-        MarketplaceView()
     }
 }

@@ -66,23 +66,24 @@ struct LoginView: View {
         // Clear any previous error messages
         errorMessage = ""
         
-        // Step 1: Fetch the password associated with the username
+        // Step 1: Fetch the user data associated with the username
         let dbRef = Database.database().reference().child("User").child(username)
         
         dbRef.observeSingleEvent(of: .value) { snapshot in
-            if let value = snapshot.value as? [String: Any], let storedPassword = value["Password"] as? String {
+            if let value = snapshot.value as? [String: Any], let storedPassword = value["password"] as? String {
                 
                 // Step 2: Compare the entered password with the stored password
-                if storedPassword == password {
+                if storedPassword == self.password {
                     // Password matches, log the user in
-                    isLoggedIn = true
+                    self.isLoggedIn = true
+                    saveLoginDataToDatabase()
                 } else {
                     // Password does not match
-                    errorMessage = "Incorrect password!"
+                    self.errorMessage = "Incorrect password!"
                 }
             } else {
                 // Username is not found in the database
-                errorMessage = "Username not found!"
+                self.errorMessage = "Username not found!"
             }
         }
     }
