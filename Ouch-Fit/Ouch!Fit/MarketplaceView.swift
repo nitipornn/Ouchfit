@@ -16,26 +16,16 @@ struct MarketplaceItem: Identifiable {
     var timestamp: Double?      // Server timestamp for sorting
 }
 
-func sanitizeFirebasePath(_ path: String) -> String {
-    let invalidCharacters = [".", "#", "$", "[", "]"]
-    var sanitizedPath = path
-    for character in invalidCharacters {
-        sanitizedPath = sanitizedPath.replacingOccurrences(of: character, with: "")
-    }
-    return sanitizedPath
-}
-
 struct MarketplaceView: View {
-    @State private var items: [MarketplaceItem] = []
-    @State private var showAddItemView = false
-    @State private var searchText = ""
-    @State private var firebaseListenerHandle: DatabaseHandle?
-    @State private var isLoading: Bool = true
-    @State private var fetchErrorMessage: String? = nil
+    @State private var items: [MarketplaceItem] = [] // Array to hold items
+    @State private var showAddItemView = false  // Flag to show the AddItemView
+    @State private var searchText = ""  // For searching marketplace items
+    @State private var isLoading: Bool = true  // To indicate loading state
+    @State private var fetchErrorMessage: String? = nil  // Error handling
 
     // Firebase reference to "all_market_items"
     private var dbRef: DatabaseReference {
-        return Database.database().reference().child("all_market_items")
+        return Database.database().reference().child("User").child("all_market_items")
     }
 
     var body: some View {
@@ -67,36 +57,27 @@ struct MarketplaceView: View {
                     }
                 }
 
-                // "Add New Item" button - only visible if user is logged in
-                if Auth.auth().currentUser != nil {
-                    Button(action: {
-                        showAddItemView = true
-                    }) {
-                        Text("Add New Item")
-                            .font(.title2)
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
-                    }
-                    .padding()
-                } else {
-                    Text("Log in to add your items to the marketplace.")
-                        .font(.callout)
-                        .foregroundColor(.gray)
+                // "Add New Item" button always visible
+                Button(action: {
+                    showAddItemView = true
+                }) {
+                    Text("Add New Item")
+                        .font(.title2)
                         .padding()
-                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: .infinity)
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
                 }
+                .padding()
             }
             .navigationBarTitle("Marketplace", displayMode: .inline)
             .onAppear {
                 fetchItemsFromFirebase()
             }
             .onDisappear {
-                if let handle = firebaseListenerHandle {
-                    dbRef.removeObserver(withHandle: handle)
-                }
+                // If the view disappears, remove the Firebase observer
+                dbRef.removeAllObservers()
             }
             .sheet(isPresented: $showAddItemView) {
                 AddItemView()
@@ -109,11 +90,7 @@ struct MarketplaceView: View {
         isLoading = true
         fetchErrorMessage = nil
 
-        if let existingHandle = firebaseListenerHandle {
-            dbRef.removeObserver(withHandle: existingHandle)
-        }
-
-        firebaseListenerHandle = dbRef.observe(.value) { snapshot in
+        dbRef.observe(.value) { snapshot in
             isLoading = false
             guard snapshot.exists() else {
                 self.items = []
@@ -183,7 +160,7 @@ struct MarketplaceView: View {
     }
 }
 
-// 3. SearchBar View
+// SearchBar View
 struct SearchBar: View {
     @Binding var text: String
 
@@ -195,8 +172,8 @@ struct SearchBar: View {
                 .padding(8)
                 .background(Color(UIColor.systemGray6))
                 .cornerRadius(10)
-                .autocorrectionDisabled() // Optional: disable autocorrect for search
-                .textInputAutocapitalization(.never) // Optional
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
 
             if !text.isEmpty {
                 Button(action: {
@@ -211,7 +188,7 @@ struct SearchBar: View {
     }
 }
 
-// 4. AsyncImageView for loading images from URL
+// AsyncImageView for loading images from URL
 struct AsyncImageView: View {
     let url: URL
 
@@ -220,12 +197,12 @@ struct AsyncImageView: View {
             switch phase {
             case .empty:
                 ProgressView()
-                    .frame(maxWidth: .infinity, maxHeight: .infinity) // Center ProgressView
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             case .success(let image):
                 image.resizable()
                      .aspectRatio(contentMode: .fill)
             case .failure(let error):
-                VStack { // Placeholder on failure
+                VStack {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(.red)
                     Text("Failed")
@@ -241,7 +218,7 @@ struct AsyncImageView: View {
     }
 }
 
-// 5. AddItemView to post new items
+// AddItemView to post new items
 struct AddItemView: View {
     @Environment(\.dismiss) var dismiss
     @State private var itemName = ""
