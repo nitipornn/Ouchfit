@@ -7,6 +7,7 @@ struct LoginView: View {
     @State private var password: String = ""
     @State private var errorMessage: String = ""
     @Binding var isLoggedIn: Bool // Binding to control login state
+    @State private var showRegisterView = false // To control navigation to register page
 
     var body: some View {
         VStack {
@@ -45,6 +46,18 @@ struct LoginView: View {
                     .background(Color.blue)
                     .cornerRadius(10)
             }
+            
+            // Register Button with Navigation to RegisterView
+            Button(action: {
+                showRegisterView.toggle()
+            }) {
+                Text("Not a member? Register here")
+                    .foregroundColor(.blue)
+                    .padding(.top, 20)
+            }
+            .fullScreenCover(isPresented: $showRegisterView) {
+                RegisterView()
+            }
         }
         .padding()
     }
@@ -63,7 +76,6 @@ struct LoginView: View {
                 if storedPassword == password {
                     // Password matches, log the user in
                     isLoggedIn = true
-                    saveLoginDataToDatabase()
                 } else {
                     // Password does not match
                     errorMessage = "Incorrect password!"
@@ -96,4 +108,8 @@ struct LoginView: View {
     }
 }
 
-
+struct Login_Previews: PreviewProvider {
+    static var previews: some View {
+        LoginView(isLoggedIn: .constant(false))
+    }
+}
