@@ -26,7 +26,7 @@ struct AddWardrobeItemView: View {
     @Environment(\.presentationMode) var presentationMode // To dismiss after saving
 
     // Predefined locations
-    let predefinedLocations = ["Living Room", "Bedroom", "Kitchen", "Bathroom"]
+    let predefinedLocations = ["Home","Condo"]
 
     var body: some View {
         Form {
