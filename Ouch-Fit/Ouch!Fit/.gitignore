@@ -1,0 +1,14 @@
+# Ignore build directory
+build/
+
+# Ignore user-specific files
+*.xcuserstate
+
+# Ignore workspace and project-specific settings
+.DS_Store
+xcuserdata/
+
+# Ignore Swift Package Manager files
+.build/
+Package.pins
+
