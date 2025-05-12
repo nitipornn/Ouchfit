@@ -1,10 +1,3 @@
-//
-//  HomeView.swift
-//  Ouch!Fit
-//
-//  Created by Nitiporn Siriwimonwan on 9/5/2568 BE.
-//
-
 import SwiftUI
 import PhotosUI
 
@@ -62,16 +55,17 @@ struct HomeView: View {
                             }
                         }
 
-                        Button(action: {
-                            print("Insight tapped")
-                        }) {
-                            VStack {
-                                Image(systemName: "chart.bar.fill")
-                                    .resizable()
-                                    .frame(width: 30, height: 30)
-                                Text("Insight")
-                                    .font(.caption)
+                        HStack(spacing: 40) {
+                            NavigationLink(destination: InsightView()) {
+                                VStack {
+                                    Image(systemName: "chart.bar.fill")
+                                        .resizable()
+                                        .frame(width: 30, height: 30)
+                                    Text("Insight")
+                                        .font(.caption)
+                                }
                             }
+
                         }
                     }
                     .padding(.top)
@@ -106,6 +100,3 @@ struct HomeView: View {
 }
 
 // Preview
-#Preview {
-    HomeView()
-}

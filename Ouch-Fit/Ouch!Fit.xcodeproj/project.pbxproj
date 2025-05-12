@@ -25,9 +25,22 @@
 		3AAECBA52DC108E3007D3D2F /* Ouch!Fit.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Ouch!Fit.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		3AC669ED2DD2464A00EA601F /* Exceptions for "Ouch!Fit" folder in "Ouch!Fit" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Insight/FabricDetailView.swift,
+			);
+			target = 3AAECBA42DC108E3007D3D2F /* Ouch!Fit */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		3AAECBA72DC108E3007D3D2F /* Ouch!Fit */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				3AC669ED2DD2464A00EA601F /* Exceptions for "Ouch!Fit" folder in "Ouch!Fit" target */,
+			);
 			path = "Ouch!Fit";
 			sourceTree = "<group>";
 		};

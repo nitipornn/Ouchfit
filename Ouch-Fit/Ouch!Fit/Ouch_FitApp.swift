@@ -24,7 +24,6 @@ struct Ouch_FitApp: App {
                 // If not logged in, show the LoginView
                 LoginView(isLoggedIn: $isLoggedIn)
             }
-            WardrobePage(viewModel: viewModel)
         }
     }
     
