@@ -1,65 +1,68 @@
+//
+//  AddWardrobeItemView.swift
+//  Ouch!Fit
+//
+//  Created by Chanita Pornsaktawee on 12/5/2568 BE.
+//
+
 import SwiftUI
 
 struct AddWardrobeItemView: View {
+    @State private var name: String = ""
+    @State private var color: String = ""
+    @State private var category: String = ""
+    @State private var brand: String = ""
+    @State private var price: Double = 0.0
+    @State private var size: String = ""
+    @State private var datePurchased: Date = Date()
+    @State private var season: String = ""
+    @State private var location: [String] = []
+    @State private var fabric: String = ""
+    
     @ObservedObject var viewModel: WardrobeViewModel
-    @State private var itemName = ""
-    @State private var color = ""
-    @State private var category = ""
-    @State private var brand = ""
-    @State private var price: String = ""
-    @State private var size = ""
-    @State private var datePurchased = Date()
-    @State private var season = ""
-    @State private var locations: [String] = []
-    @State private var fabric = ""
-    @State private var imageURL = ""
 
     var body: some View {
-        NavigationView {
-            Form {
-                Section(header: Text("Item Details")) {
-                    TextField("Item Name", text: $itemName)
-                    TextField("Color", text: $color)
-                    TextField("Category", text: $category)
-                    TextField("Brand", text: $brand)
-                    TextField("Price", text: $price)
-                        .keyboardType(.decimalPad)
-                    TextField("Size", text: $size)
-                    DatePicker("Date Purchased", selection: $datePurchased, displayedComponents: .date)
-                    TextField("Season", text: $season)
-                    TextField("Fabric", text: $fabric)
+        Form {
+            Section(header: Text("Item Details")) {
+                TextField("Name", text: $name)
+                TextField("Color", text: $color)
+                TextField("Brand", text: $brand)
+                TextField("Size", text: $size)
+                TextField("Fabric", text: $fabric)
+                Picker("Category", selection: $category) {
+                    Text("Shirt").tag("Shirt")
+                    Text("Pants").tag("Pants")
+                    // Add more categories
                 }
-                
-                Section(header: Text("Location")) {
-                    TextField("Location", text: $locations, prompt: Text("Add multiple locations separated by commas"))
+                Picker("Season", selection: $season) {
+                    Text("Summer").tag("Summer")
+                    Text("Winter").tag("Winter")
+                    // Add more seasons
                 }
-                
-                Button("Save Item") {
+                DatePicker("Date Purchased", selection: $datePurchased, displayedComponents: .date)
+            }
+
+            Section(header: Text("Location")) {
+                // Implement multi-select for locations
+            }
+
+            Section {
+                Button("Save") {
                     let newItem = WardrobeItem(
-                        name: itemName,
-                        color: color,
-                        category: category,
-                        brand: brand,
-                        price: Double(price) ?? 0.0,
-                        size: size,
-                        datePurchased: datePurchased,
-                        season: season,
-                        location: locations.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) },
-                        fabric: fabric,
-                        imageURL: imageURL
+                        name: name, color: color, category: category,
+                        brand: brand, price: price, size: size,
+                        datePurchased: datePurchased, season: season,
+                        location: location, fabric: fabric, imageURL: ""
                     )
-                    
                     viewModel.addItem(item: newItem)
                 }
             }
-            .navigationTitle("Add New Item")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        // Dismiss the sheet
-                    }
-                }
-            }
         }
+    }
+}
+
+struct AddWardrobeItemView_Previews: PreviewProvider {
+    static var previews: some View {
+        AddWardrobeItemView(viewModel: WardrobeViewModel())
     }
 }

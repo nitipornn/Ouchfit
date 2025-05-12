@@ -1,57 +1,54 @@
-import SwiftUI
-import Foundation
-
-// Create a struct to define the Wardrobe Item
-struct WardrobeItem: Identifiable, Codable {
-    var id = UUID()
-    var name: String
-    var color: String
-    var category: String
-    var brand: String
-    var price: Double
-    var size: String
-    var datePurchased: Date
-    var season: String
-    var location: [String]
-    var fabric: String
-    var imageURL: String
-}
-
-// ViewModel to manage the wardrobe items
-class WardrobeViewModel: ObservableObject {
-    @Published var wardrobeItems: [WardrobeItem] = []
-
-    init() {
-        loadItems()
-    }
-    
-    // Load items from UserDefaults or local storage
-    func loadItems() {
-        if let data = UserDefaults.standard.data(forKey: "wardrobeItems") {
-            if let decodedItems = try? JSONDecoder().decode([WardrobeItem].self, from: data) {
-                wardrobeItems = decodedItems
-            }
-        }
-    }
-    
-    // Save items to UserDefaults or local storage
-    func saveItems() {
-        if let encoded = try? JSONEncoder().encode(wardrobeItems) {
-            UserDefaults.standard.set(encoded, forKey: "wardrobeItems")
-        }
-    }
-    
-    // Add a new item to the wardrobe
-    func addItem(item: WardrobeItem) {
-        wardrobeItems.append(item)
-        saveItems()
-    }
-    
-    // Remove an item from the wardrobe
-    func removeItem(item: WardrobeItem) {
-        if let index = wardrobeItems.firstIndex(where: { $0.id == item.id }) {
-            wardrobeItems.remove(at: index)
-            saveItems()
-        }
-    }
-}
+//import SwiftUI
+//
+//struct WardrobeView: View {
+//    @ObservedObject var viewModel = WardrobeViewModel()
+//    
+//    var body: some View {
+//        NavigationView {
+//            VStack {
+//                Text("Wardrobe")
+//                    .font(.title)
+//                    .padding()
+//                
+//                ScrollView(.horizontal) {
+//                    LazyHStack {
+//                        ForEach(viewModel.wardrobeItems) { item in
+//                            VStack {
+//                                // Card-like view to display each item
+//                                Text(item.name)
+//                                    .font(.headline)
+//                                Text(item.color)
+//                                    .font(.subheadline)
+//                                Text(item.size)
+//                                    .font(.subheadline)
+//                            }
+//                            .padding()
+//                            .background(Color.gray.opacity(0.1))
+//                            .cornerRadius(8)
+//                            .frame(width: 150, height: 200)
+//                        }
+//                    }
+//                    .padding()
+//                }
+//
+//                Button(action: {
+//                    // Navigate to Add Wardrobe Item View
+//                }) {
+//                    Text("Add Item")
+//                        .font(.headline)
+//                        .padding()
+//                        .background(Color.blue)
+//                        .foregroundColor(.white)
+//                        .cornerRadius(8)
+//                }
+//                .padding()
+//            }
+//        }
+//    }
+//}
+//
+//struct WardrobeView_Previews: PreviewProvider {
+//    static var previews: some View {
+//        WardrobeView()
+//    }
+//}
