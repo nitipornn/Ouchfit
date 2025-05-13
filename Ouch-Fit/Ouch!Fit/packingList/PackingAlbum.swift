@@ -33,8 +33,16 @@ struct PackingAlbum: Identifiable, Equatable, Codable {
 
     // Remove an image from the album
     mutating func removeImage(_ image: UIImage) {
-        if let data = image.jpegData(compressionQuality: 1.0), let index = imageData.firstIndex(of: data) {
-            imageData.remove(at: index)  // Remove the image data from imageData array
+        if let data = image.jpegData(compressionQuality: 1.0) {
+            // Debug: Check if the image data exists in the array
+            if let index = imageData.firstIndex(of: data) {
+                print("Image found at index \(index), removing image.")
+                imageData.remove(at: index)  // Remove the image data from imageData array
+            } else {
+                print("Image not found in imageData array.")
+            }
+        } else {
+            print("Failed to convert UIImage to Data.")
         }
     }
 }
