@@ -5,15 +5,17 @@ import FirebaseDatabase
 struct HomeView: View {
     @State private var profileImage: Image = Image(systemName: "person.circle")
     @State private var selectedItem: PhotosPickerItem?
-    @State private var accountName: String = ""
+    @State private var accountName: String = ""  // Store the username
     @State private var isEditingName = false
     @State private var showImagePicker = false
 
-    // Load the account name from UserDefaults when the view appears
-    init() {
-        // Retrieve the username from UserDefaults
-        if let savedAccountName = UserDefaults.standard.string(forKey: "loggedInUsername") {
-            _accountName = State(initialValue: savedAccountName)
+    // Create a wardrobeViewModel
+    @ObservedObject var wardrobeViewModel = WardrobeViewModel()
+
+    // Fetch username from UserDefaults
+    func fetchUsername() {
+        if let savedUsername = UserDefaults.standard.string(forKey: "username") {
+            accountName = savedUsername
         }
     }
 
@@ -21,7 +23,7 @@ struct HomeView: View {
         NavigationView {
             ZStack(alignment: .bottomTrailing) {
                 VStack(spacing: 20) {
-                    // Profile Image
+                    // Profile image
                     profileImage
                         .resizable()
                         .aspectRatio(contentMode: .fill)
@@ -32,7 +34,7 @@ struct HomeView: View {
                             showImagePicker = true
                         }
 
-                    // Account Name
+                    // Account name
                     HStack {
                         if isEditingName {
                             TextField("Enter username", text: $accountName)
@@ -45,10 +47,6 @@ struct HomeView: View {
                         }
 
                         Button(action: {
-                            if isEditingName {
-                                // Save the edited account name back to UserDefaults
-                                UserDefaults.standard.set(accountName, forKey: "loggedInUsername")
-                            }
                             isEditingName.toggle()
                         }) {
                             Image(systemName: isEditingName ? "checkmark.circle.fill" : "pencil")
@@ -58,25 +56,27 @@ struct HomeView: View {
 
                     // Icon buttons
                     HStack(spacing: 40) {
-                        NavigationLink(destination: PackingListView()) {
+                        NavigationLink(destination: PackingListView(wardrobeViewModel: wardrobeViewModel)) {
                             VStack {
                                 Image(systemName: "bag.fill")
                                     .resizable()
+                                    .foregroundColor(.cyan)
                                     .frame(width: 30, height: 30)
                                 Text("Packing")
                                     .font(.caption)
+                                    .foregroundColor(.cyan)
                             }
                         }
 
-                        HStack(spacing: 40) {
-                            NavigationLink(destination: InsightView()) {
-                                VStack {
-                                    Image(systemName: "chart.bar.fill")
-                                        .resizable()
-                                        .frame(width: 30, height: 30)
-                                    Text("Insight")
-                                        .font(.caption)
-                                }
+                        NavigationLink(destination: InsightView()) { // Navigate to InsightView
+                            VStack {
+                                Image(systemName: "chart.bar.fill")
+                                    .resizable()
+                                    .frame(width: 30, height: 30)
+                                    .foregroundColor(.cyan)
+                                Text("Insight")
+                                    .font(.caption)
+                                    .foregroundColor(.cyan)
                             }
                         }
                     }
@@ -85,7 +85,6 @@ struct HomeView: View {
                     Spacer()
                 }
                 .padding()
-
             }
             .photosPicker(isPresented: $showImagePicker, selection: $selectedItem, matching: .images)
             .onChange(of: selectedItem) { newItem in
@@ -96,13 +95,15 @@ struct HomeView: View {
                     }
                 }
             }
+            .onAppear {
+                fetchUsername()  // Fetch the username when the view appears
+            }
             .navigationTitle("Home")
         }
     }
 }
 
-struct HomeView_Previews: PreviewProvider {
-    static var previews: some View {
-        HomeView()
-    }
+// Preview
+#Preview {
+    HomeView(wardrobeViewModel: WardrobeViewModel())
 }

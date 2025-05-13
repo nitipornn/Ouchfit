@@ -74,49 +74,58 @@ struct PackingListView: View {
     }
     @State private var showCreateAlbum = false
     @State private var newAlbumName = ""
+    
+    // ส่ง wardrobeViewModel ไปที่ PackingListView
+    @ObservedObject var wardrobeViewModel: WardrobeViewModel
 
     var body: some View {
-        List {
-            ForEach(albums) { album in
-                NavigationLink(destination: AlbumDetailView(album: album, albums: $albums)) {
-                    Text(album.name)
+        NavigationView {
+            VStack {
+                List {
+                    ForEach(albums) { album in
+                        NavigationLink(destination: AlbumDetailView(album: album, albums: $albums, wardrobeViewModel: wardrobeViewModel)) {
+                            Text(album.name)
+                        }
+                    }
+                    .onDelete(perform: deleteAlbum)  // การลบแบบสไลด์
+                }
+                .navigationTitle("Packing List Albums")
+                .toolbar {
+                    Button(action: {
+                        showCreateAlbum = true
+                    }) {
+                        Image(systemName: "plus")
+                    }
+                }
+
+                // Add new album sheet
+                .sheet(isPresented: $showCreateAlbum) {
+                    VStack(spacing: 20) {
+                        Text("New packing list").font(.headline)
+                        TextField("Name your list...", text: $newAlbumName)
+                            .textFieldStyle(.roundedBorder)
+                            .padding(.horizontal)
+
+                        Button("Create packing list") {
+                            guard !newAlbumName.isEmpty else { return }
+                            let newAlbum = PackingAlbum(name: newAlbumName, imageData: [])
+                            albums.append(newAlbum)
+                            newAlbumName = ""
+                            showCreateAlbum = false
+                        }
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(8)
+
+                        Spacer()
+                    }
+                    .padding()
                 }
             }
-            .onDelete(perform: deleteAlbum)  // การลบแบบสไลด์
-        }
-        .navigationTitle("Packing List Albums")
-        .toolbar {
-            Button(action: {
-                showCreateAlbum = true
-            }) {
-                Image(systemName: "plus")
+            .onAppear {
+                loadAlbums()  // โหลดข้อมูลเมื่อเริ่มต้น
             }
-        }
-        .sheet(isPresented: $showCreateAlbum) {
-            VStack(spacing: 20) {
-                Text("New packing list").font(.headline)
-                TextField("Name your list...", text: $newAlbumName)
-                    .textFieldStyle(.roundedBorder)
-                    .padding(.horizontal)
-
-                Button("Create packing list") {
-                    guard !newAlbumName.isEmpty else { return }
-                    let newAlbum = PackingAlbum(name: newAlbumName, imageData: [])
-                    albums.append(newAlbum)
-                    newAlbumName = ""
-                    showCreateAlbum = false
-                }
-                .padding()
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(8)
-
-                Spacer()
-            }
-            .padding()
-        }
-        .onAppear {
-            loadAlbums()  // โหลดข้อมูลเมื่อเริ่มต้น
         }
     }
 
@@ -142,5 +151,6 @@ struct PackingListView: View {
 }
 
 #Preview {
-    PackingListView()
+    // ส่ง wardrobeViewModel ไปที่ PackingListView
+    PackingListView(wardrobeViewModel: WardrobeViewModel())
 }
