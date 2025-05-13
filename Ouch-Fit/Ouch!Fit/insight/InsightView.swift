@@ -3,158 +3,7 @@
 //  Ouch!Fit
 //
 //  Created by Nitiporn Siriwimonwan on 12/5/2568 BE.
-//
-//import SwiftUI
-//
-//struct InsightView: View {
-//    @State private var itemCount: Int = 0 // จำนวนสินค้า (ตัวอย่าง)
-//    @State private var closetValue: Double = 0.0 // มูลค่าทั้งหมดของตู้เสื้อผ้า (ตัวอย่าง)
-//
-//    var body: some View {
-//        ScrollView {
-//            VStack(alignment: .leading) {
-//
-//
-//                // Item Count and Total Value
-//                VStack(alignment: .leading) {
-//                    Text("Item Count: \(itemCount)")
-//                        .font(.title2)
-//                        .padding(.bottom, 10)
-//                    Text("Total Closet Value: $\(closetValue, specifier: "%.2f")")
-//                        .font(.title2)
-//                        .padding(.bottom, 20)
-//                }
-//
-//                // Sections for each category
-//                categorySection(title: "Color", destination: ColorDetailView(), icon: "paintpalette")
-//                categorySection(title: "Season", destination: SeasonDetailView(), icon: "snowflake")
-//                categorySection(title: "Size", destination: SizeDetailView(), icon: "rectangle.grid.1x2.fill")
-//                categorySection(title: "Fabric", destination: FabricDetailView(), icon: "tshirt")
-//                categorySection(title: "Brand", destination: BrandDetailView(), icon: "tag")
-//                categorySection(title: "Location", destination: LocationDetailView(), icon: "location.circle.fill")
-//
-//                Spacer()
-//            }
-//            .padding()
-//        }
-//        .navigationTitle("Insight Stats")
-//    }
-//
-//    // Updated category section
-//    private func categorySection(title: String, destination: some View, icon: String) -> some View {
-//        VStack(alignment: .leading) {
-//            NavigationLink(destination: destination) {
-//                InsightCategoryButton(label: title, icon: icon)
-//            }
-//        }
-//        .padding(.bottom, 20)
-//    }
-//}
-//
-//// Custom Button for Category with updated color and icon
-//struct InsightCategoryButton: View {
-//    var label: String
-//    var icon: String
-//
-//    var body: some View {
-//        HStack {
-//            Image(systemName: icon)
-//                .resizable()
-//                .frame(width: 30, height: 30)
-//                .foregroundColor(.black) // Icon color set to black
-//            Text(label)
-//                .font(.title2)
-//                .bold()
-//                .foregroundColor(.black)
-//            Spacer()
-//            Image(systemName: "chevron.right")
-//                .foregroundColor(.gray)
-//        }
-//        .padding()
-//        .background(Color.gray.opacity(0.1)) // Background color set to light gray
-//        .cornerRadius(10)
-//        .padding(.vertical, 5)
-//    }
-//}
-//
-//// Example Detail Views (you can replace these with actual content)
-//struct ColorDetailView: View {
-//    var body: some View {
-//        VStack {
-//            Text("Color Details")
-//                .font(.largeTitle)
-//                .padding()
-//            Spacer()
-//        }
-//        .navigationTitle("Color")
-//    }
-//}
-//
-//struct SeasonDetailView: View {
-//    var body: some View {
-//        VStack {
-//            Text("Season Details")
-//                .font(.largeTitle)
-//                .padding()
-//            Spacer()
-//        }
-//        .navigationTitle("Season")
-//    }
-//}
-//
-//struct SizeDetailView: View {
-//    var body: some View {
-//        VStack {
-//            Text("Size Details")
-//                .font(.largeTitle)
-//                .padding()
-//            Spacer()
-//        }
-//        .navigationTitle("Size")
-//    }
-//}
-//
-//struct FabricDetailView: View {
-//    var body: some View {
-//        VStack {
-//            Text("Fabric Details")
-//                .font(.largeTitle)
-//                .padding()
-//            Spacer()
-//        }
-//        .navigationTitle("Fabric")
-//    }
-//}
-//
-//struct BrandDetailView: View {
-//    var body: some View {
-//        VStack {
-//            Text("Brand Details")
-//                .font(.largeTitle)
-//                .padding()
-//            Spacer()
-//        }
-//        .navigationTitle("Brand")
-//    }
-//}
-//
-//struct LocationDetailView: View {
-//    var body: some View {
-//        VStack {
-//            Text("Location Details")
-//                .font(.largeTitle)
-//                .padding()
-//            Spacer()
-//        }
-//        .navigationTitle("Location")
-//    }
-//}
-//
-//struct InsightView_Previews: PreviewProvider {
-//    static var previews: some View {
-//        InsightView()
-//    }
-//}
+
 import SwiftUI
 
 struct InsightView: View {
@@ -215,10 +64,10 @@ struct InsightView: View {
                 .cornerRadius(10)
                 .padding(.bottom)
 
-                // แสดงกราฟบาร์สีในหมวด "Color Breakdown"
+                // Display Color Breakdown with new colors
                 colorBarChart
 
-                // แสดงสถิติตามหมวดหมู่
+                // Display category statistics
                 categorySection(title: "Color", countData: colorCount)
                 categorySection(title: "Season", countData: seasonCount)
                 categorySection(title: "Size", countData: sizeCount)
@@ -226,13 +75,13 @@ struct InsightView: View {
                 categorySection(title: "Brand", countData: brandCount)
                 categorySection(title: "Location", countData: locationCount)
 
-                // ปรับ NavigationLink ให้เหมือนแบบรายการ (Sorted by Price)
+                // Navigation Links
                 NavigationLink(destination: SortedWardrobeView(viewModel: viewModel)) {
                     HStack {
                         Text("Price Sorting")
                             .font(.body)
                         Spacer()
-                        Image(systemName: "chevron.right") // เพิ่มลูกศร
+                        Image(systemName: "chevron.right")
                             .foregroundColor(.gray)
                     }
                     .padding()
@@ -240,15 +89,14 @@ struct InsightView: View {
                     .cornerRadius(10)
                     .padding(.top)
                 }
-                .buttonStyle(PlainButtonStyle()) // ลบสไตล์ของ NavigationLink
+                .buttonStyle(PlainButtonStyle())
 
-                // New NavigationLink for Sorted by Purchase Date
                 NavigationLink(destination: SortedByDateView(viewModel: viewModel)) {
                     HStack {
                         Text("Recently acquired")
                             .font(.body)
                         Spacer()
-                        Image(systemName: "chevron.right") // เพิ่มลูกศร
+                        Image(systemName: "chevron.right")
                             .foregroundColor(.gray)
                     }
                     .padding()
@@ -256,7 +104,7 @@ struct InsightView: View {
                     .cornerRadius(10)
                     .padding(.top)
                 }
-                .buttonStyle(PlainButtonStyle()) // ลบสไตล์ของ NavigationLink
+                .buttonStyle(PlainButtonStyle())
 
                 Spacer()
             }
@@ -265,7 +113,7 @@ struct InsightView: View {
         .navigationTitle("Insight Stats")
     }
 
-    // Method for creating category sections
+    // Category section method
     private func categorySection(title: String, countData: [String: Int]) -> some View {
         VStack(alignment: .leading) {
             Text("\(title)")
@@ -287,40 +135,40 @@ struct InsightView: View {
         .padding(.bottom, 20)
     }
 
-    // Method for creating color bar chart (combined in one bar)
+    // Color Bar Chart with new colors
     private var colorBarChart: some View {
         VStack(alignment: .leading) {
-            Text("Color ")
+            Text("Color Breakdown")
                 .font(.headline)
                 .padding(.bottom, 5)
 
             HStack(spacing: 0) {
                 let totalItems = CGFloat(itemCount)
-                let barWidth = CGFloat(300) // ความกว้างของกราฟรวม
+                let barWidth = CGFloat(300)
 
-                ForEach(["Red", "Blue", "Green", "Black", "White", "Yellow"], id: \.self) { color in
+                ForEach(["Red", "Blue", "Green", "Black", "White", "Yellow", "Pink", "Purple", "Sky Blue", "Orange", "Brown", "Tan", "Gray", "Beige", "KhaKi"], id: \.self) { color in
                     let count = colorCount[color] ?? 0
                     let colorWidth = calculateBarWidth(for: count, totalItems: totalItems, barWidth: barWidth)
 
                     Rectangle()
-                        .fill(getColor(for: color)) // ใช้ฟังก์ชันเพื่อดึงสีที่ถูกต้อง
-                        .frame(width: colorWidth, height: 20) // กำหนดขนาดของกราฟบาร์
+                        .fill(getColor(for: color))
+                        .frame(width: colorWidth, height: 20)
                 }
             }
             .frame(height: 20)
-            .background(Color.gray.opacity(0.2)) // พื้นหลังของกราฟ
+            .background(Color.gray.opacity(0.2))
             .cornerRadius(5)
             .shadow(radius: 5)
         }
         .padding(.bottom, 10)
     }
 
-    // ฟังก์ชันเพื่อคำนวณความกว้างของแต่ละบาร์
+    // Calculate bar width based on count
     private func calculateBarWidth(for count: Int, totalItems: CGFloat, barWidth: CGFloat) -> CGFloat {
         return CGFloat(count) / totalItems * barWidth
     }
 
-    // ฟังก์ชันเพื่อเลือกสีจากชื่อ
+    // Get color for each string name
     private func getColor(for color: String) -> Color {
         switch color {
         case "Red":
@@ -335,11 +183,30 @@ struct InsightView: View {
             return .white
         case "Yellow":
             return .yellow
+        case "Pink":
+            return .pink
+        case "Purple":
+            return .purple
+        case "Sky Blue":
+            return Color.blue.opacity(0.6)
+        case "Orange":
+            return .orange
+        case "Brown":
+            return .brown
+        case "Tan":
+            return Color(white: 0.6)
+        case "Gray":
+            return .gray
+        case "Beige":
+            return Color(white: 0.9)
+        case "KhaKi":
+            return Color(white: 0.7)
         default:
-            return .gray // Default color if not found
+            return .mint
         }
     }
 }
+
 struct InsightView_Previews: PreviewProvider {
     static var previews: some View {
         InsightView()

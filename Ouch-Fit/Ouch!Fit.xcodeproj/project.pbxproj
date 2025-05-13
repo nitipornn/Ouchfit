@@ -30,7 +30,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				.gitignore,
-				"Ouch-Fit-Info.plist",
 				WardrobeItems.plist,
 			);
 			target = 3AAECBA42DC108E3007D3D2F /* Ouch!Fit */;

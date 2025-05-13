@@ -1,5 +1,6 @@
 import SwiftUI
 import PhotosUI
+import FirebaseDatabase
 
 struct HomeView: View {
     @State private var profileImage: Image = Image(systemName: "person.circle")
@@ -8,11 +9,19 @@ struct HomeView: View {
     @State private var isEditingName = false
     @State private var showImagePicker = false
 
+    // Load the account name from UserDefaults when the view appears
+    init() {
+        // Retrieve the username from UserDefaults
+        if let savedAccountName = UserDefaults.standard.string(forKey: "loggedInUsername") {
+            _accountName = State(initialValue: savedAccountName)
+        }
+    }
+
     var body: some View {
         NavigationView {
             ZStack(alignment: .bottomTrailing) {
                 VStack(spacing: 20) {
-                    // รูปโปรไฟล์
+                    // Profile Image
                     profileImage
                         .resizable()
                         .aspectRatio(contentMode: .fill)
@@ -23,7 +32,7 @@ struct HomeView: View {
                             showImagePicker = true
                         }
 
-                    // ชื่อแอค
+                    // Account Name
                     HStack {
                         if isEditingName {
                             TextField("Enter username", text: $accountName)
@@ -36,6 +45,10 @@ struct HomeView: View {
                         }
 
                         Button(action: {
+                            if isEditingName {
+                                // Save the edited account name back to UserDefaults
+                                UserDefaults.standard.set(accountName, forKey: "loggedInUsername")
+                            }
                             isEditingName.toggle()
                         }) {
                             Image(systemName: isEditingName ? "checkmark.circle.fill" : "pencil")
@@ -43,7 +56,7 @@ struct HomeView: View {
                         }
                     }
 
-                    // ปุ่มไอคอน
+                    // Icon buttons
                     HStack(spacing: 40) {
                         NavigationLink(destination: PackingListView()) {
                             VStack {
@@ -65,7 +78,6 @@ struct HomeView: View {
                                         .font(.caption)
                                 }
                             }
-
                         }
                     }
                     .padding(.top)
@@ -74,16 +86,6 @@ struct HomeView: View {
                 }
                 .padding()
 
-                // ปุ่มบวกมุมล่างขวา
-                Button(action: {
-                    print("Plus button tapped")
-                }) {
-                    Image(systemName: "plus.circle.fill")
-                        .resizable()
-                        .frame(width: 60, height: 60)
-                        .foregroundColor(.blue)
-                        .padding()
-                }
             }
             .photosPicker(isPresented: $showImagePicker, selection: $selectedItem, matching: .images)
             .onChange(of: selectedItem) { newItem in
@@ -99,4 +101,8 @@ struct HomeView: View {
     }
 }
 
-// Preview
+struct HomeView_Previews: PreviewProvider {
+    static var previews: some View {
+        HomeView()
+    }
+}
