@@ -9,18 +9,40 @@ import SwiftUI
 
 struct SortedWardrobeView: View {
     @ObservedObject var viewModel: WardrobeViewModel
-    
+
+    // Helper function to convert base64 string to UIImage
+    func imageFromBase64(base64String: String) -> UIImage? {
+        if let data = Data(base64Encoded: base64String) {
+            return UIImage(data: data)
+        }
+        return nil
+    }
+
     var body: some View {
         List {
             // เรียงเสื้อผ้าจากราคาสูงสุดไปต่ำสุด
             ForEach(viewModel.wardrobeItems.sorted(by: { $0.price > $1.price })) { item in
                 HStack {
                     VStack(alignment: .leading) {
+                        // แสดงภาพสินค้า
+                        if let uiImage = imageFromBase64(base64String: item.imageURL) {
+                            Image(uiImage: uiImage)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 80, height: 80) // กำหนดขนาดที่ต้องการ
+                                .cornerRadius(10)
+                        } else {
+                            Color.gray.opacity(0.1)
+                                .frame(width: 80, height: 80) // หากไม่มีภาพแสดง Placeholder
+                                .cornerRadius(10)
+                        }
+                        
+                        // แสดงข้อมูลสินค้า
                         Text(item.name)
                             .font(.headline)
                         
-                        Text((item.brand))
-                            .font(.headline)
+                        Text(item.brand)
+                            .font(.subheadline)
                             .foregroundColor(.black)
                         
                         Text("Color: \(item.color)")
@@ -38,6 +60,7 @@ struct SortedWardrobeView: View {
                     
                     Spacer()
                     
+                    // แสดงราคา
                     Text("$\(item.price, specifier: "%.2f")")
                         .foregroundColor(.gray)
                 }
