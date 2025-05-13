@@ -3,69 +3,59 @@ import UIKit
 
 struct AddWardrobeItemView: View {
     @State private var name: String = ""
-    @State private var color: String = "" // Default value for color
-    @State private var category: String = ""
+    @State private var color: String = "White"
+    @State private var category: String = "Shirt"
     @State private var brand: String = ""
-    @State private var price: String = "" // Price as String to easily handle input
+    @State private var price: String = ""
     @State private var size: String = ""
     @State private var datePurchased: Date = Date()
-    @State private var season: String = ""
-    @State private var location: String = "" // Location should be a single value (not an array)
-    @State private var fabric: String = "" // Default value for fabric
-    @State private var newLocation: String = "" // For adding new location
+    @State private var season: String = "All"
+    @State private var location: String = ""
+    @State private var fabric: String = "Cotton"
+    @State private var newLocation: String = ""
     
     @State private var selectedImage: UIImage? = nil
     @State private var isImagePickerPresented = false
-    @State private var finalImage: UIImage? = nil  // Image after background removal
-    @State private var isImageConfirmed: Bool = false // To confirm image before saving
-    @State private var removeBackgroundOption: Bool = false // Option to remove background
+    @State private var finalImage: UIImage? = nil
+    @State private var isImageConfirmed: Bool = false
+    @State private var removeBackgroundOption: Bool = false
 
     @ObservedObject var viewModel: WardrobeViewModel
     
-    // Predefined options for colors and fabrics
-    let availableColors = ["Red", "Blue", "Green", "Black", "White", "Yellow","Pink","Purple","Sky Blue","Orange","Brown","Tan","Gray","Beige","KhaKi"]
+    let availableColors = ["White", "Black", "Pink", "Green", "Red", "Brown", "Orange", "Blue", "Sky Blue", "Gray", "Yellow", "Purple"]
     let availableFabrics = ["Cotton", "Wool", "Silk", "Polyester", "Leather", "Denim"]
     
-    @Environment(\.presentationMode) var presentationMode // To dismiss after saving
+    @Environment(\.presentationMode) var presentationMode
 
-    // Predefined locations
     let predefinedLocations = ["Home", "Condo", "Office"]
 
     var body: some View {
         NavigationView {
             Form {
-                // Item details section
                 Section(header: Text("Item Details")) {
                     TextField("Name", text: $name)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
 
-                    // Color Picker
                     Picker("Color", selection: $color) {
                         ForEach(availableColors, id: \.self) { color in
                             Text(color).tag(color)
                         }
                     }
-                    .pickerStyle(MenuPickerStyle())
-                    .padding(.vertical)
 
-                    // Fabric Picker
                     Picker("Fabric", selection: $fabric) {
                         ForEach(availableFabrics, id: \.self) { fabric in
                             Text(fabric).tag(fabric)
                         }
                     }
-                    .pickerStyle(MenuPickerStyle())
-                    .padding(.vertical)
 
                     TextField("Brand", text: $brand)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                     TextField("Size", text: $size)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
 
-                    // Price Field
                     TextField("Price", text: $price)
                         .keyboardType(.decimalPad)
-                        .textFieldStyle(RoundedBorderTextFieldStyle()) // Ensure price is a number (e.g., 99.99)
+                        .textFieldStyle(RoundedBorderTextFieldStyle())
 
                     Picker("Category", selection: $category) {
                         Text("Shirt").tag("Shirt")
@@ -85,45 +75,35 @@ struct AddWardrobeItemView: View {
                         Text("Winter").tag("Winter")
                         Text("Spring").tag("Spring")
                         Text("Rainy").tag("Rainy")
-                        // Add more seasons if needed
                     }
 
                     DatePicker("Date Purchased", selection: $datePurchased, displayedComponents: .date)
                 }
 
-                // Location section (single selection)
                 Section(header: Text("Location")) {
-                    // Predefined Locations Picker (single selection)
                     Picker("Select Location", selection: $location) {
                         ForEach(predefinedLocations, id: \.self) { location in
                             Text(location).tag(location)
                         }
                     }
-                    .pickerStyle(MenuPickerStyle())
-                    
-                    // TextField to add a new custom location
+
                     TextField("Add a custom location", text: $newLocation)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .padding(.top, 10)
 
-                    // Button to add custom location to the list
                     Button(action: {
                         if !newLocation.isEmpty {
-                            location = newLocation // Update selected location with the new custom location
-                            newLocation = "" // Clear the text field after adding
+                            location = newLocation
+                            newLocation = ""
                         }
                     }) {
                         Text("Add Location")
                             .font(.body)
                             .foregroundColor(.blue)
                     }
-                    .padding(.top, 10)
                 }
 
-                // Image section
                 Section(header: Text("Image")) {
                     VStack {
-                        // Display the selected image if it exists
                         if let selectedImage = selectedImage {
                             Image(uiImage: selectedImage)
                                 .resizable()
@@ -138,11 +118,21 @@ struct AddWardrobeItemView: View {
                             ImagePicker(selectedImage: $selectedImage, isImagePickerPresented: $isImagePickerPresented)
                         }
 
-                        // Option for background removal
                         Toggle("Remove Background", isOn: $removeBackgroundOption)
                             .padding(.top)
+                            .onChange(of: removeBackgroundOption) { newValue in
+                                if newValue, let selectedImage = selectedImage {
+                                    // Call remove background function as soon as the toggle is on
+                                    Task {
+                                        do {
+                                            finalImage = try await removeBackground(of: selectedImage)
+                                        } catch {
+                                            print("Error during background removal: \(error.localizedDescription)")
+                                        }
+                                    }
+                                }
+                            }
 
-                        // If the image has been processed and background removed, show it
                         if let finalImage = finalImage {
                             Image(uiImage: finalImage)
                                 .resizable()
@@ -161,39 +151,36 @@ struct AddWardrobeItemView: View {
                     }
                 }
 
-                // Save Button
                 Section {
                     Button("Save") {
-                        // Only save if the image is confirmed
-                        if isImageConfirmed {
-                            // If the image is selected, convert it to a base64 string to store it
-                            let imageData = finalImage?.jpegData(compressionQuality: 1.0)?.base64EncodedString() ?? ""
-                            
-                            // Convert the price string to a double
-                            let priceValue = Double(price) ?? 0.0
-                            
-                            let newItem = WardrobeItem(
-                                name: name,
-                                color: color,
-                                category: category,
-                                brand: brand,
-                                price: priceValue,
-                                size: size,
-                                datePurchased: datePurchased,
-                                season: season,
-                                location: [location],
-                                fabric: fabric,
-                                imageURL: imageData
-                            )
-                            
-                            viewModel.addItem(item: newItem)
-                            
-                            // Dismiss the current view after saving
-                            presentationMode.wrappedValue.dismiss()
+                        let imageData: String
+                        
+                        if let finalImage = finalImage {
+                            imageData = finalImage.jpegData(compressionQuality: 1.0)?.base64EncodedString() ?? ""
+                        } else if let selectedImage = selectedImage {
+                            imageData = selectedImage.jpegData(compressionQuality: 1.0)?.base64EncodedString() ?? ""
                         } else {
-                            // Show an alert if the image isn't confirmed
-                            print("Please confirm the image before saving.")
+                            imageData = ""
                         }
+
+                        let priceValue = Double(price) ?? 0.0
+                        
+                        let newItem = WardrobeItem(
+                            name: name,
+                            color: color,
+                            category: category,
+                            brand: brand,
+                            price: priceValue,
+                            size: size,
+                            datePurchased: datePurchased,
+                            season: season,
+                            location: [location],
+                            fabric: fabric,
+                            imageURL: imageData
+                        )
+                        
+                        viewModel.addItem(item: newItem)
+                        presentationMode.wrappedValue.dismiss()
                     }
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding()
@@ -203,24 +190,13 @@ struct AddWardrobeItemView: View {
                 }
             }
             .navigationBarTitle("Add Wardrobe Item")
-            .background(Color.white) // Set background to white
-            .foregroundColor(.black) // Set text to black
-        }
-        .onChange(of: selectedImage) { _ in
-            if removeBackgroundOption, let selectedImage = selectedImage {
-                // Trigger background removal only if the option is enabled
-                Task {
-                    do {
-                        // Call the remove background function asynchronously
-                        finalImage = try await removeBackground(of: selectedImage)
-                    } catch {
-                        print("Error during background removal: \(error.localizedDescription)")
-                    }
-                }
-            }
         }
     }
 
+//    func removeBackground(of image: UIImage) async throws -> UIImage {
+//        // Call the background removal function (adjust this with your service)
+//        return try await RemoveBGService.shared.removeBackground(from: image)
+//    }
 }
 
 struct AddWardrobeItemView_Previews: PreviewProvider {
