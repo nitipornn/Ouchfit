@@ -26,7 +26,7 @@ struct MainTabView: View {
                     Label("Home", systemImage: "house")
                 }
 
-            PlannerView()
+            PlannerView(wardrobeViewModel: WardrobeViewModel())
                 .tabItem {
                     Label("Planner", systemImage: "calendar")
                 }
