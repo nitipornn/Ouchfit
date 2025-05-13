@@ -16,11 +16,14 @@ struct AddWardrobeItemView: View {
     
     @State private var selectedImage: UIImage? = nil
     @State private var isImagePickerPresented = false
+    @State private var finalImage: UIImage? = nil  // Image after background removal
+    @State private var isImageConfirmed: Bool = false // To confirm image before saving
+    @State private var removeBackgroundOption: Bool = false // Option to remove background
 
     @ObservedObject var viewModel: WardrobeViewModel
     
     // Predefined options for colors and fabrics
-    let availableColors = ["Red", "Blue", "Green", "Black", "White", "Yellow"]
+    let availableColors = ["Red", "Blue", "Green", "Black", "White", "Yellow","Pink","Purple","Sky Blue","Orange","Brown","Tan","Gray","Beige","KhaKi"]
     let availableFabrics = ["Cotton", "Wool", "Silk", "Polyester", "Leather", "Denim"]
     
     @Environment(\.presentationMode) var presentationMode // To dismiss after saving
@@ -67,12 +70,21 @@ struct AddWardrobeItemView: View {
                     Picker("Category", selection: $category) {
                         Text("Shirt").tag("Shirt")
                         Text("Pants").tag("Pants")
-                        // Add more categories as needed
+                        Text("Short Skirt").tag("Short Skirt")
+                        Text("Long Skirt").tag("Long Skirt")
+                        Text("Baby Tee").tag("Baby Tee")
+                        Text("T-Shirt").tag("T-Shirt")
+                        Text("Shoes").tag("Shoes")
+                        Text("Scarf").tag("Scarf")
+                        Text("Hat").tag("Hat")
                     }
 
                     Picker("Season", selection: $season) {
+                        Text("All").tag("All")
                         Text("Summer").tag("Summer")
                         Text("Winter").tag("Winter")
+                        Text("Spring").tag("Spring")
+                        Text("Rainy").tag("Rainy")
                         // Add more seasons if needed
                     }
 
@@ -125,29 +137,63 @@ struct AddWardrobeItemView: View {
                         .fullScreenCover(isPresented: $isImagePickerPresented) {
                             ImagePicker(selectedImage: $selectedImage, isImagePickerPresented: $isImagePickerPresented)
                         }
+
+                        // Option for background removal
+                        Toggle("Remove Background", isOn: $removeBackgroundOption)
+                            .padding(.top)
+
+                        // If the image has been processed and background removed, show it
+                        if let finalImage = finalImage {
+                            Image(uiImage: finalImage)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 200, height: 200)
+                                .padding(.top)
+
+                            Button("Confirm Image") {
+                                isImageConfirmed = true
+                            }
+                            .padding(.top)
+                            .background(isImageConfirmed ? Color.green : Color.orange)
+                            .foregroundColor(.white)
+                            .cornerRadius(8)
+                        }
                     }
                 }
 
                 // Save Button
                 Section {
                     Button("Save") {
-                        // If the image is selected, convert it to a base64 string to store it
-                        let imageData = selectedImage?.jpegData(compressionQuality: 1.0)?.base64EncodedString() ?? ""
-                        
-                        // Convert the price string to a double
-                        let priceValue = Double(price) ?? 0.0
-                        
-                        let newItem = WardrobeItem(
-                            name: name, color: color, category: category,
-                            brand: brand, price: priceValue, size: size,
-                            datePurchased: datePurchased, season: season,
-                            location: [location], fabric: fabric, imageURL: imageData
-                        )
-                        
-                        viewModel.addItem(item: newItem)
-                        
-                        // Dismiss the current view after saving
-                        presentationMode.wrappedValue.dismiss()
+                        // Only save if the image is confirmed
+                        if isImageConfirmed {
+                            // If the image is selected, convert it to a base64 string to store it
+                            let imageData = finalImage?.jpegData(compressionQuality: 1.0)?.base64EncodedString() ?? ""
+                            
+                            // Convert the price string to a double
+                            let priceValue = Double(price) ?? 0.0
+                            
+                            let newItem = WardrobeItem(
+                                name: name,
+                                color: color,
+                                category: category,
+                                brand: brand,
+                                price: priceValue,
+                                size: size,
+                                datePurchased: datePurchased,
+                                season: season,
+                                location: [location],
+                                fabric: fabric,
+                                imageURL: imageData
+                            )
+                            
+                            viewModel.addItem(item: newItem)
+                            
+                            // Dismiss the current view after saving
+                            presentationMode.wrappedValue.dismiss()
+                        } else {
+                            // Show an alert if the image isn't confirmed
+                            print("Please confirm the image before saving.")
+                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding()
@@ -160,7 +206,21 @@ struct AddWardrobeItemView: View {
             .background(Color.white) // Set background to white
             .foregroundColor(.black) // Set text to black
         }
+        .onChange(of: selectedImage) { _ in
+            if removeBackgroundOption, let selectedImage = selectedImage {
+                // Trigger background removal only if the option is enabled
+                Task {
+                    do {
+                        // Call the remove background function asynchronously
+                        finalImage = try await removeBackground(of: selectedImage)
+                    } catch {
+                        print("Error during background removal: \(error.localizedDescription)")
+                    }
+                }
+            }
+        }
     }
+
 }
 
 struct AddWardrobeItemView_Previews: PreviewProvider {
