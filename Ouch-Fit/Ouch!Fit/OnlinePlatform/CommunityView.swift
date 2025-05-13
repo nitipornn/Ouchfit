@@ -40,7 +40,7 @@ struct PostView: View {
                     .frame(width: 40, height: 40)
                     .clipShape(Circle())
                 Text(post.username)
-                    .font(.headline)
+                    .font(.custom("Classyvogueregular", size: 20))
                     .fontWeight(.bold)
                 Spacer()
             }
@@ -79,7 +79,7 @@ struct PostView: View {
                         .foregroundColor(post.isLiked ? .red : .primary)
                 }
                 Text("\(post.likes) Likes")
-                    .font(.subheadline)
+                    .font(.custom("Classyvogueregular", size: 16))
                 Spacer()
                 Button(action: {
                     // TODO: ไปยังหน้าแสดงความคิดเห็น
@@ -88,13 +88,13 @@ struct PostView: View {
                         .font(.title2)
                 }
                 Text("\(post.comments.count) Comments")
-                    .font(.subheadline)
+                    .font(.custom("Classyvogueregular", size: 12))
             }
             .padding(.horizontal)
 
             // คำบรรยาย
             Text(post.caption)
-                .font(.caption)
+                .font(.custom("Classyvogueregular", size: 10))
                 .foregroundColor(.gray)
                 .padding(.horizontal)
 
@@ -103,7 +103,7 @@ struct PostView: View {
                 VStack(alignment: .leading) {
                     ForEach(post.comments.prefix(2)) { comment in
                         Text("\(comment.username): \(comment.text)")
-                            .font(.caption)
+                            .font(.custom("Classyvogueregular", size: 10))
                             .padding(.horizontal)
                     }
                     if post.comments.count > 2 {
@@ -111,7 +111,7 @@ struct PostView: View {
                             // TODO: ไปยังหน้าแสดงความคิดเห็นทั้งหมด
                         }) {
                             Text("View all \(post.comments.count) comments")
-                                .font(.caption)
+                                .font(.custom("Classyvogueregular", size: 10))
                                 .foregroundColor(.gray)
                                 .padding(.horizontal)
                         }
@@ -197,7 +197,7 @@ struct CommunityView: View {
                     Image(systemName: "plus")
                         .font(.system(size: 24, weight: .bold))
                         .padding()
-                        .background(Color.blue)
+                        .background(Color.cyan)
                         .foregroundColor(.white)
                         .clipShape(Circle())
                         .shadow(radius: 4)
@@ -205,6 +205,13 @@ struct CommunityView: View {
                 .padding()
             }
             .navigationBarTitle("Ouch!Fitnity", displayMode: .inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Ouch!Fitnity")
+                        .font(.custom("Classyvogueregular", size: 24)) // Custom font
+                        .bold()
+                        .foregroundColor(.black) // Optional: set font color
+                }}
             // ใช้ .sheet เพื่อแสดง PostCreatorView
             .sheet(isPresented: $isShowingPostCreator) {
                 PostCreatorView(posts: $posts, isShowingPostCreator: $isShowingPostCreator)

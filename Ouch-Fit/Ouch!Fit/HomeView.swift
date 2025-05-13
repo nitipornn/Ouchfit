@@ -1,6 +1,5 @@
 import SwiftUI
 import PhotosUI
-import FirebaseDatabase
 
 struct HomeView: View {
     @State private var profileImage: Image = Image(systemName: "person.circle")
@@ -24,38 +23,43 @@ struct HomeView: View {
             ZStack(alignment: .bottomTrailing) {
                 VStack(spacing: 20) {
                     // Profile image
-                    profileImage
-                        .resizable()
-                        .aspectRatio(contentMode: .fill)
-                        .frame(width: 100, height: 100)
-                        .clipShape(Circle())
-                        .overlay(Circle().stroke(Color.gray, lineWidth: 2))
-                        .onTapGesture {
-                            showImagePicker = true
-                        }
-
-                    // Account name
                     HStack {
-                        if isEditingName {
-                            TextField("Enter username", text: $accountName)
-                                .textFieldStyle(RoundedBorderTextFieldStyle())
-                                .frame(maxWidth: 200)
-                        } else {
-                            Text(accountName)
-                                .font(.title2)
-                                .bold()
-                        }
+                        profileImage
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(width: 100, height: 100)
+                            .clipShape(Circle())
+                            .overlay(Circle().stroke(Color.gray, lineWidth: 2))
+                            .onTapGesture {
+                                showImagePicker = true
+                            }
 
-                        Button(action: {
-                            isEditingName.toggle()
-                        }) {
-                            Image(systemName: isEditingName ? "checkmark.circle.fill" : "pencil")
-                                .foregroundColor(.gray)
+
+                        // Account name
+                        HStack {
+                            if isEditingName {
+                                TextField("Enter username", text: $accountName)
+                                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                                    .frame(maxWidth: 200)
+                            } else {
+                                Text(accountName)
+                                    .font(.custom("Classyvogueregular", size: 20))
+                                    .bold()
+                            }
+
+                            Button(action: {
+                                isEditingName.toggle()
+                            }) {
+                                Image(systemName: isEditingName ? "checkmark.circle.fill" : "pencil")
+                                    .foregroundColor(.gray)
+                            }
                         }
                     }
+                    .padding()
 
                     // Icon buttons
                     HStack(spacing: 40) {
+                        // Packing Button
                         NavigationLink(destination: PackingListView(wardrobeViewModel: wardrobeViewModel)) {
                             VStack {
                                 Image(systemName: "bag.fill")
@@ -63,11 +67,12 @@ struct HomeView: View {
                                     .foregroundColor(.cyan)
                                     .frame(width: 30, height: 30)
                                 Text("Packing")
-                                    .font(.caption)
+                                    .font(.custom("Classyvogueregular", size: 15))
                                     .foregroundColor(.cyan)
                             }
                         }
 
+                        // Insight Button
                         NavigationLink(destination: InsightView()) { // Navigate to InsightView
                             VStack {
                                 Image(systemName: "chart.bar.fill")
@@ -75,7 +80,7 @@ struct HomeView: View {
                                     .frame(width: 30, height: 30)
                                     .foregroundColor(.cyan)
                                 Text("Insight")
-                                    .font(.caption)
+                                    .font(.custom("Classyvogueregular", size: 15))
                                     .foregroundColor(.cyan)
                             }
                         }
@@ -84,7 +89,6 @@ struct HomeView: View {
 
                     Spacer()
                 }
-                .padding()
             }
             .photosPicker(isPresented: $showImagePicker, selection: $selectedItem, matching: .images)
             .onChange(of: selectedItem) { newItem in
@@ -98,12 +102,12 @@ struct HomeView: View {
             .onAppear {
                 fetchUsername()  // Fetch the username when the view appears
             }
-            .navigationTitle("Home")
         }
     }
 }
 
-// Preview
-#Preview {
-    HomeView(wardrobeViewModel: WardrobeViewModel())
+struct HomeView_Previews: PreviewProvider {
+    static var previews: some View {
+        HomeView(wardrobeViewModel: WardrobeViewModel())  // Pass the wardrobeViewModel
+    }
 }

@@ -14,10 +14,12 @@ struct PlannerView: View {
 
     var body: some View {
         VStack {
+            Text("Planner")
+                .font(.custom("Bristol", size: 30))
             Text("Weather on \(currentDate, formatter: dateFormatter):")
-                .font(.custom("Classyvogueregular", size: 25))
+                .font(.custom("Classyvogueregular", size: 23))
             Text(weatherManager.weatherData)
-                .font(.custom("Classyvogueregular", size: 20))
+                .font(.custom("Classyvogueregular", size: 18))
             // DatePicker to select a date
             DatePicker("Select a Date", selection: $currentDate, displayedComponents: .date)
                 .datePickerStyle(GraphicalDatePickerStyle())
@@ -174,7 +176,7 @@ struct CanvasView: View {
                     Image(uiImage: selectedImages[index])
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 100, height: 100)
+                        .frame(width: 150, height: 150)
                         .position(imagePositions[index, default: CGPoint(x: 150, y: 150)]) // Default position
                         .gesture(
                             DragGesture()
@@ -205,7 +207,7 @@ struct CanvasView: View {
             .background(Color.black)
             .foregroundColor(.white)
             .cornerRadius(8)
-            .font(.custom("Classyvogueregular", size: 25))
+            .font(.custom("Classyvogueregular", size: 20))
 
             // Button to confirm and save the canvas image
             Button("Confirm Image") {
@@ -216,7 +218,7 @@ struct CanvasView: View {
             .background(Color.gray)
             .foregroundColor(.white)
             .cornerRadius(8)
-            .font(.custom("Classyvogueregular", size: 25))
+            .font(.custom("Classyvogueregular", size: 20))
         }
         .padding()
         .background(Color.white)

@@ -1,8 +1,10 @@
 import SwiftUI
+import FirebaseDatabaseInternal
 import PhotosUI
 import FirebaseAuth
 import FirebaseDatabase
 import FirebaseStorage
+import Firebase
 
 // MarketplaceItem Struct
 struct MarketplaceItem: Identifiable {
@@ -62,16 +64,22 @@ struct MarketplaceView: View {
                     showAddItemView = true
                 }) {
                     Text("Add New Item")
-                        .font(.title2)
+                        .font(.custom("Classyvogueregular", size: 13))
                         .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(Color.blue)
+                        .background(Color.black)
                         .foregroundColor(.white)
                         .cornerRadius(10)
                 }
                 .padding()
             }
             .navigationBarTitle("Marketplace", displayMode: .inline)
+            .toolbar {
+                ToolbarItem(placement: .principal) {
+                    Text("Marketplace")
+                        .font(.custom("Classyvogueregular", size: 24)) // Custom font
+                        .bold()
+                        .foregroundColor(.black) // Optional: set font color
+                }}
             .onAppear {
                 fetchItemsFromFirebase()
             }
@@ -126,7 +134,7 @@ struct MarketplaceView: View {
         HStack(alignment: .top, spacing: 15) {
             if let imageURLString = item.imageURL, let url = URL(string: imageURLString) {
                 AsyncImageView(url: url)
-                    .frame(width: 80, height: 80)
+                    .frame(width: 90, height: 90)
                     .background(Color.gray.opacity(0.1))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
             } else {
@@ -144,14 +152,15 @@ struct MarketplaceView: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(item.name)
-                    .font(.headline)
+                    .font(.custom("Classyvogueregular", size: 18))
+                    .bold()
                     .lineLimit(2)
                 Text("$\(item.price, specifier: "%.2f")")
-                    .font(.subheadline)
+                    .font(.custom("Classyvogueregular", size: 15))
                     .fontWeight(.semibold)
-                    .foregroundColor(.green)
+                    .foregroundColor(.cyan)
                 Text(item.description)
-                    .font(.caption)
+                    .font(.custom("Classyvogueregular", size: 12))
                     .foregroundColor(.gray)
                     .lineLimit(3)
             }
@@ -174,6 +183,7 @@ struct SearchBar: View {
                 .cornerRadius(10)
                 .autocorrectionDisabled()
                 .textInputAutocapitalization(.never)
+                .font(.custom("Classyvogueregular", size: 13))
 
             if !text.isEmpty {
                 Button(action: {

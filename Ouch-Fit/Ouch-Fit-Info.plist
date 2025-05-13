@@ -4,6 +4,7 @@
 <dict>
 	<key>UIAppFonts</key>
 	<array>
+		<string>Bristol.otf</string>
 		<string>Classyvogueregular.ttf</string>
 	</array>
 </dict>
