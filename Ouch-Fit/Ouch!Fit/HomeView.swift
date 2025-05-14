@@ -1,4 +1,6 @@
 import SwiftUI
+import FirebaseAuth
+import FirebaseDatabase
 import PhotosUI
 
 struct HomeView: View {
@@ -59,7 +61,31 @@ struct HomeView: View {
                         }
                     }
                     .padding()
+                    HStack(spacing: 40) {
+                        NavigationLink(destination: PackingListView(wardrobeViewModel: wardrobeViewModel)) {
+                            VStack {
+                                Image(systemName: "bag.fill")
+                                    .resizable()
+                                    .foregroundColor(.cyan)
+                                    .frame(width: 30, height: 30)
+                                Text("Packing")
+                                    .font(.caption)
+                                    .foregroundColor(.cyan)
+                            }
+                        }
 
+                        NavigationLink(destination: InsightView()) {
+                            VStack {
+                                Image(systemName: "chart.bar.fill")
+                                    .resizable()
+                                    .foregroundColor(.cyan)
+                                    .frame(width: 30, height: 30)
+                                Text("Insight")
+                                    .font(.caption)
+                                    .foregroundColor(.cyan)
+                            }
+                        }
+                    }
                     // Search bar for filtering items
                     SearchBar(text: $searchText)
                         .padding(.horizontal)
@@ -78,6 +104,35 @@ struct HomeView: View {
                     }
                     .padding(.horizontal)
                 }
+                
+                // Buttons for Packing and Insight Views
+//                HStack(spacing: 40) {
+//                    NavigationLink(destination: PackingListView(wardrobeViewModel: wardrobeViewModel)) {
+//                        VStack {
+//                            Image(systemName: "bag.fill")
+//                                .resizable()
+//                                .foregroundColor(.cyan)
+//                                .frame(width: 30, height: 30)
+//                            Text("Packing")
+//                                .font(.caption)
+//                                .foregroundColor(.cyan)
+//                        }
+//                    }
+//
+//                    NavigationLink(destination: InsightView()) {
+//                        VStack {
+//                            Image(systemName: "chart.bar.fill")
+//                                .resizable()
+//                                .foregroundColor(.cyan)
+//                                .frame(width: 30, height: 30)
+//                            Text("Insight")
+//                                .font(.caption)
+//                                .foregroundColor(.cyan)
+//                        }
+//                    }
+//                }
+                .padding(.top)
+                
             }
             .photosPicker(isPresented: $showImagePicker, selection: $selectedItem, matching: .images)
             .onChange(of: selectedItem) { newItem in
