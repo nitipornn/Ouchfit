@@ -1,10 +1,9 @@
 import SwiftUI
-import FirebaseDatabaseInternal
 import PhotosUI
-import FirebaseAuth
+import Firebase
 import FirebaseDatabase
 import FirebaseStorage
-import Firebase
+import FirebaseAuth
 
 // MarketplaceItem Struct
 struct MarketplaceItem: Identifiable {
@@ -17,6 +16,12 @@ struct MarketplaceItem: Identifiable {
     var postedByUserID: String? // ID of the user who posted
     var timestamp: Double?      // Server timestamp for sorting
 }
+
+import SwiftUI
+import Firebase
+import FirebaseDatabase
+import FirebaseStorage
+import FirebaseAuth
 
 struct MarketplaceView: View {
     @State private var items: [MarketplaceItem] = [] // Array to hold items
@@ -33,6 +38,11 @@ struct MarketplaceView: View {
     var body: some View {
         NavigationView {
             VStack {
+                Text("Marketplace")
+                    .font(.custom("Bristol", size: 30))
+                    .fontWeight(.medium)
+                    .foregroundColor(.black)
+
                 SearchBar(text: $searchText)
                     .padding(.horizontal)
                     .padding(.top)
@@ -59,9 +69,9 @@ struct MarketplaceView: View {
                     }
                 }
 
-                // "Add New Item" button always visible
+                // The button to trigger adding an item to Firebase automatically (no UI button)
                 Button(action: {
-                    showAddItemView = true
+                    addItemToDatabase()  // Trigger item addition automatically
                 }) {
                     Text("Add New Item")
                         .font(.custom("Classyvogueregular", size: 13))
@@ -72,23 +82,11 @@ struct MarketplaceView: View {
                 }
                 .padding()
             }
-            .navigationBarTitle("Marketplace", displayMode: .inline)
-            .toolbar {
-                ToolbarItem(placement: .principal) {
-                    Text("Marketplace")
-                        .font(.custom("Classyvogueregular", size: 24)) // Custom font
-                        .bold()
-                        .foregroundColor(.black) // Optional: set font color
-                }}
             .onAppear {
                 fetchItemsFromFirebase()
             }
             .onDisappear {
-                // If the view disappears, remove the Firebase observer
                 dbRef.removeAllObservers()
-            }
-            .sheet(isPresented: $showAddItemView) {
-                AddItemView()
             }
         }
     }
@@ -123,9 +121,37 @@ struct MarketplaceView: View {
                 }
             }
 
-            // Sort items by timestamp (newest first)
             fetchedItems.sort { ($0.timestamp ?? 0) > ($1.timestamp ?? 0) }
             self.items = fetchedItems
+        }
+    }
+
+    // Add item to Firebase Realtime Database
+    func addItemToDatabase() {
+        // Assuming the current user is authenticated
+        guard let currentUserID = Auth.auth().currentUser?.uid else {
+            print("User not logged in.")
+            return
+        }
+
+        let newItemId = dbRef.childByAutoId().key ?? UUID().uuidString
+        let newItemData: [String: Any] = [
+            "contactSeller": "Alice, alice@example.com",
+            "description": "Fallen Angles SizeS",
+            "imageURL": "https://firebasestorage.googleapis.com/v0/b/ouch-fit.firebasestorage.app/o/marketplace_images%2FMESH%20TOP2.jpeg?alt=media&token=fa6d0a98-a7e4-4198-81c0-61a01113350b",
+            "name": "MESH TOP",
+            "postedByUserID": currentUserID,
+            "price": 490,
+            "timestamp": ServerValue.timestamp()
+        ]
+
+        dbRef.child(newItemId).setValue(newItemData) { error, _ in
+            if let error = error {
+                print("Error saving item: \(error.localizedDescription)")
+            } else {
+                print("Item added successfully!")
+                fetchItemsFromFirebase()  // Refresh the list after adding the new item
+            }
         }
     }
 
@@ -167,66 +193,67 @@ struct MarketplaceView: View {
         }
         .padding(.vertical, 8)
     }
-}
 
-// SearchBar View
-struct SearchBar: View {
-    @Binding var text: String
+    struct SearchBar: View {
+        @Binding var text: String
 
-    var body: some View {
-        HStack {
-            Image(systemName: "magnifyingglass")
-                .foregroundColor(.gray)
-            TextField("Search items...", text: $text)
-                .padding(8)
-                .background(Color(UIColor.systemGray6))
-                .cornerRadius(10)
-                .autocorrectionDisabled()
-                .textInputAutocapitalization(.never)
-                .font(.custom("Classyvogueregular", size: 13))
+        var body: some View {
+            HStack {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(.gray)
+                TextField("Search items...", text: $text)
+                    .padding(8)
+                    .background(Color(UIColor.systemGray6))
+                    .cornerRadius(10)
+                    .autocorrectionDisabled()
+                    .textInputAutocapitalization(.never)
+                    .font(.custom("Classyvogueregular", size: 13))
 
-            if !text.isEmpty {
-                Button(action: {
-                    self.text = ""
-                }) {
-                    Image(systemName: "xmark.circle.fill")
-                        .foregroundColor(.gray)
+                if !text.isEmpty {
+                    Button(action: {
+                        self.text = ""
+                    }) {
+                        Image(systemName: "xmark.circle.fill")
+                            .foregroundColor(.gray)
+                    }
+                    .padding(.trailing, 6)
                 }
-                .padding(.trailing, 6)
             }
+            .padding(.horizontal)
         }
     }
-}
 
-// AsyncImageView for loading images from URL
-struct AsyncImageView: View {
-    let url: URL
+    // AsyncImageView for loading images from URL
+    struct AsyncImageView: View {
+        let url: URL
 
-    var body: some View {
-        AsyncImage(url: url) { phase in
-            switch phase {
-            case .empty:
-                ProgressView()
+        var body: some View {
+            AsyncImage(url: url) { phase in
+                switch phase {
+                case .empty:
+                    ProgressView()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                case .success(let image):
+                    image.resizable()
+                         .aspectRatio(contentMode: .fill)
+                case .failure(let error):
+                    VStack {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundColor(.red)
+                        Text("Failed")
+                            .font(.caption)
+                    }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            case .success(let image):
-                image.resizable()
-                     .aspectRatio(contentMode: .fill)
-            case .failure(let error):
-                VStack {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(.red)
-                    Text("Failed")
-                        .font(.caption)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.gray.opacity(0.2))
+                    .background(Color.gray.opacity(0.2))
 
-            @unknown default:
-                EmptyView()
+                @unknown default:
+                    EmptyView()
+                }
             }
         }
     }
 }
+
 
 // AddItemView to post new items
 struct AddItemView: View {
@@ -335,10 +362,37 @@ struct AddItemView: View {
     }
 
     func saveItemAction() {
-        guard let currentUserID = Auth.auth().currentUser?.uid else { return }
-        guard let price = Double(itemPrice), price > 0 else { return }
-        guard let finalImageURL = uploadedImageURL else { return }
-
+        // Check if the user is logged in
+        guard let currentUserID = Auth.auth().currentUser?.uid else {
+            alertTitle = "Error"
+            alertMessage = "User not logged in."
+            showAlert = true
+            return
+        }
+        
+        // Validate the item price and other fields
+        guard let price = Double(itemPrice), price > 0 else {
+            alertTitle = "Invalid Price"
+            alertMessage = "Please enter a valid price."
+            showAlert = true
+            return
+        }
+        
+        guard !itemName.isEmpty, !itemDescription.isEmpty, !contactSeller.isEmpty else {
+            alertTitle = "Missing Information"
+            alertMessage = "Please fill in all required fields."
+            showAlert = true
+            return
+        }
+        
+        // If no image URL, try uploading the image to Firebase Storage
+        guard let finalImageURL = uploadedImageURL else {
+            alertTitle = "Missing Image"
+            alertMessage = "Please upload an image for the item."
+            showAlert = true
+            return
+        }
+        
         isSavingItem = true
         let newItemId = dbRef.childByAutoId().key ?? UUID().uuidString
 
@@ -352,22 +406,32 @@ struct AddItemView: View {
             "timestamp": ServerValue.timestamp()
         ]
         
+        // Save the item to Firebase Realtime Database
         dbRef.child(newItemId).setValue(newItemData) { error, _ in
             isSavingItem = false
             if error == nil {
+                // Reset fields if successful
                 itemName = ""
                 itemDescription = ""
                 itemPrice = ""
                 contactSeller = ""
                 uploadedImageURL = nil
                 dismiss()
+            } else {
+                // Handle any errors
+                alertTitle = "Error"
+                alertMessage = error?.localizedDescription ?? "Failed to save item."
+                showAlert = true
             }
         }
     }
 
+
     func uploadImageToFirebaseStorage(imageData: Data) async throws -> URL {
         let imageFileName = UUID().uuidString + ".jpg"
         let imageRef = storageRef.child(imageFileName)
+
+        // Upload image data to Firebase Storage
         return try await withCheckedThrowingContinuation { continuation in
             imageRef.putData(imageData, metadata: nil) { metadata, error in
                 if let error = error {
@@ -377,10 +441,13 @@ struct AddItemView: View {
                     if let error = error {
                         continuation.resume(throwing: error)
                     } else if let url = url {
-                        continuation.resume(returning: url)
+                        continuation.resume(returning: url)  // Return the download URL
                     }
                 }
             }
         }
     }
+
+
+
 }

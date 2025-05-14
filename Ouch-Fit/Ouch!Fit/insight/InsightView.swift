@@ -48,19 +48,27 @@ struct InsightView: View {
     }
 
     var body: some View {
+        
+        Text("Insight Stats")
+            .font(.custom("Bristol", size: 30))
+            .fontWeight(.medium)
+            .foregroundColor(.black)
+        
         ScrollView {
+            
             VStack(alignment: .leading) {
                 VStack(alignment: .leading) {
-                    Text("Item Count: \(itemCount)")
-                        .font(.title2)
+                    Text("Total Item: \(itemCount)")
+                        .font(.custom("Classyvogueregular", size: 23))
                         .padding(.bottom, 10)
-
+                        .foregroundColor(.black)
                     Text("Total Closet Value: $\(closetValue, specifier: "%.2f")")
-                        .font(.title2)
+                        .font(.custom("Classyvogueregular", size: 21))
                         .padding(.bottom, 20)
+                        .foregroundColor(.cyan)
+                        
                 }
                 .padding(.horizontal)
-                .background(Color.white)
                 .cornerRadius(10)
                 .padding(.bottom)
 
@@ -79,7 +87,7 @@ struct InsightView: View {
                 NavigationLink(destination: SortedWardrobeView(viewModel: viewModel)) {
                     HStack {
                         Text("Price Sorting")
-                            .font(.body)
+                            .font(.custom("Classyvogueregular", size: 20))
                         Spacer()
                         Image(systemName: "chevron.right")
                             .foregroundColor(.gray)
@@ -94,7 +102,7 @@ struct InsightView: View {
                 NavigationLink(destination: SortedByDateView(viewModel: viewModel)) {
                     HStack {
                         Text("Recently acquired")
-                            .font(.body)
+                            .font(.custom("Classyvogueregular", size: 20))
                         Spacer()
                         Image(systemName: "chevron.right")
                             .foregroundColor(.gray)
@@ -110,23 +118,23 @@ struct InsightView: View {
             }
             .padding()
         }
-        .navigationTitle("Insight Stats")
     }
 
     // Category section method
     private func categorySection(title: String, countData: [String: Int]) -> some View {
         VStack(alignment: .leading) {
             Text("\(title)")
-                .font(.headline)
+                .font(.custom("Classyvogueregular", size: 18))
                 .padding(.bottom, 5)
 
             ForEach(countData.keys.sorted(), id: \.self) { key in
                 HStack {
                     Text(key)
-                        .font(.body)
+                        .font(.custom("Classyvogueregular", size: 16))
+                        .foregroundColor(.cyan)
                     Spacer()
                     Text("\(countData[key]!)")
-                        .font(.body)
+                        .font(.custom("Classyvogueregular", size: 16))
                         .foregroundColor(.gray)
                 }
                 .padding(.vertical, 2)
@@ -139,7 +147,7 @@ struct InsightView: View {
     private var colorBarChart: some View {
         VStack(alignment: .leading) {
             Text("Color Breakdown")
-                .font(.headline)
+                .font(.custom("Bristol", size: 26))
                 .padding(.bottom, 5)
 
             HStack(spacing: 0) {
@@ -152,7 +160,7 @@ struct InsightView: View {
 
                     Rectangle()
                         .fill(getColor(for: color))
-                        .frame(width: colorWidth, height: 20)
+                        .frame(width: colorWidth, height: 40)
                 }
             }
             .frame(height: 20)

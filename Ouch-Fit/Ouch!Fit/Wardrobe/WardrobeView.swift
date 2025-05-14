@@ -8,6 +8,10 @@ struct WardrobeView: View {
     var body: some View {
         NavigationView {
             VStack {
+                Text("Wardrobe")
+                    .font(.custom("Bristol", size: 30))
+                    .fontWeight(.medium)
+                    .foregroundColor(.black)
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 20) {
                         // Group items by category
@@ -130,7 +134,6 @@ struct WardrobeView: View {
                     .padding(.bottom, 30)
                 }
             )
-            .navigationBarTitle("Wardrobe", displayMode: .inline)
         }
     }
 }

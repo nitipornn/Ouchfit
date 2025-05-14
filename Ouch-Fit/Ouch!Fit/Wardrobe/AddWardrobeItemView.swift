@@ -18,7 +18,6 @@ struct AddWardrobeItemView: View {
     @State private var isImagePickerPresented = false
     @State private var finalImage: UIImage? = nil
     @State private var isImageConfirmed: Bool = false
-    @State private var removeBackgroundOption: Bool = false
 
     @ObservedObject var viewModel: WardrobeViewModel
     
@@ -117,37 +116,6 @@ struct AddWardrobeItemView: View {
                         .fullScreenCover(isPresented: $isImagePickerPresented) {
                             ImagePicker(selectedImage: $selectedImage, isImagePickerPresented: $isImagePickerPresented)
                         }
-
-                        Toggle("Remove Background", isOn: $removeBackgroundOption)
-                            .padding(.top)
-                            .onChange(of: removeBackgroundOption) { newValue in
-                                if newValue, let selectedImage = selectedImage {
-                                    // Call remove background function as soon as the toggle is on
-                                    Task {
-                                        do {
-                                            finalImage = try await removeBackground(of: selectedImage)
-                                        } catch {
-                                            print("Error during background removal: \(error.localizedDescription)")
-                                        }
-                                    }
-                                }
-                            }
-
-                        if let finalImage = finalImage {
-                            Image(uiImage: finalImage)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 200, height: 200)
-                                .padding(.top)
-
-                            Button("Confirm Image") {
-                                isImageConfirmed = true
-                            }
-                            .padding(.top)
-                            .background(isImageConfirmed ? Color.green : Color.orange)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
-                        }
                     }
                 }
 
@@ -192,12 +160,8 @@ struct AddWardrobeItemView: View {
             .navigationBarTitle("Add Wardrobe Item")
         }
     }
-
-//    func removeBackground(of image: UIImage) async throws -> UIImage {
-//        // Call the background removal function (adjust this with your service)
-//        return try await RemoveBGService.shared.removeBackground(from: image)
-//    }
 }
+
 
 struct AddWardrobeItemView_Previews: PreviewProvider {
     static var previews: some View {
